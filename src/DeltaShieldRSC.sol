@@ -55,6 +55,11 @@ abstract contract AbstractReactive is IReactive {
 }
 
 contract DeltaShieldRSC is AbstractReactive {
+    // Reactive Network Protocol Specifications:
+    // - Subscriptions filter L1 event logs by contract address and topic0.
+    // - REACTIVE_IGNORE acts as a wildcard for unindexed/indexed values.
+    // - Callback emits specify the destination chainId, target address, and gas limit.
+
     // Event signature of the destination chain's callback emission
     event Callback(
         uint256 indexed chainId,
