@@ -198,4 +198,12 @@ address public reactiveVmAddress;
         emit HedgeFeeFractionUpdated(hedgeFeeFraction, _newFraction);
         hedgeFeeFraction = _newFraction;
     }
+
+    event LeverageUpdated(uint256 oldLeverage, uint256 newLeverage);
+
+    function setLeverage(uint256 _newLeverage) external onlyOwner {
+        if (_newLeverage == 0 || _newLeverage > 100) revert InvalidLeverage();
+        emit LeverageUpdated(leverage, _newLeverage);
+        leverage = _newLeverage;
+    }
 }
