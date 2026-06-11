@@ -63,6 +63,18 @@ sequenceDiagram
 
 ---
 
+
+## Governance & Safety Controls
+
+The `ReactiveDeltaShieldHook` features a set of robust safety controls and governance settings to manage the hedging configuration dynamically:
+- **Ownership**: The contract designates an `owner` who is authorized to adjust key configurations and update target addresses.
+- **Pausability**: In the event of a market anomaly or smart contract emergency, the owner can pause the hook. When paused, the hook will skip swap fee accumulation and reject new hedging triggers.
+- **Updatable Configurations**:
+  - `updateReactiveVmAddress`: Update the authorized Reactive VM sender.
+  - `updatePerpDexAddress` & `updateMarginVaultAddress`: Migrate to a new derivatives platform or vault.
+  - `setHedgeFeeFraction`: Fine-tune the percentage of swap fees allocated to hedging.
+  - `setLeverage`: Dynamically adjust perpetual contract leverage bounds (1x - 100x).
+
 ## Getting Started
 
 ### 1. Requirements
