@@ -176,4 +176,11 @@ address public reactiveVmAddress;
         emit ReactiveVmAddressUpdated(reactiveVmAddress, _newReactiveVmAddress);
         reactiveVmAddress = _newReactiveVmAddress;
     }
+
+    event PerpDexAddressUpdated(address indexed oldAddress, address indexed newAddress);
+
+    function updatePerpDexAddress(address _newPerpDex) external onlyOwner {
+        emit PerpDexAddressUpdated(perpDex, _newPerpDex);
+        perpDex = _newPerpDex;
+    }
 }
