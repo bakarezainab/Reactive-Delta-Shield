@@ -128,7 +128,7 @@ address public reactiveVmAddress;
         PoolId poolId,
         address asset,
         bool isShort
-    ) external onlyReactiveVM {
+    ) external onlyReactiveVM whenNotPaused {
         if (activeHedges[poolId] != bytes32(0)) revert ActiveHedgeExists();
         
         uint256 marginAmount = hedgeCollateral[poolId];
@@ -154,7 +154,7 @@ address public reactiveVmAddress;
      * @notice Callback invoked by the Reactive VM when pool price stabilizes or LP rebalances.
      * @param poolId The ID of the pool triggering the callback.
      */
-    function closeHedge(PoolId poolId) external onlyReactiveVM {
+    function closeHedge(PoolId poolId) external onlyReactiveVM whenNotPaused {
         bytes32 positionId = activeHedges[poolId];
         if (positionId == bytes32(0)) revert NoActiveHedgeToClose();
 
@@ -205,5 +205,19 @@ address public reactiveVmAddress;
         if (_newLeverage == 0 || _newLeverage > 100) revert InvalidLeverage();
         emit LeverageUpdated(leverage, _newLeverage);
         leverage = _newLeverage;
+    }
+
+    bool public paused;
+
+    event PausedStateUpdated(bool isPaused);
+
+    modifier whenNotPaused() {
+        if (paused) revert HookPaused();
+        _;
+    }
+
+    function setPaused(bool _paused) external onlyOwner {
+        paused = _paused;
+        emit PausedStateUpdated(_paused);
     }
 }
