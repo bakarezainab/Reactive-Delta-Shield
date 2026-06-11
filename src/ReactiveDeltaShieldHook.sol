@@ -190,4 +190,12 @@ address public reactiveVmAddress;
         emit MarginVaultAddressUpdated(marginVault, _newMarginVault);
         marginVault = _newMarginVault;
     }
+
+    event HedgeFeeFractionUpdated(uint24 oldFraction, uint24 newFraction);
+
+    function setHedgeFeeFraction(uint24 _newFraction) external onlyOwner {
+        if (_newFraction > 100000) revert InvalidFeeFraction(); // Max 100%
+        emit HedgeFeeFractionUpdated(hedgeFeeFraction, _newFraction);
+        hedgeFeeFraction = _newFraction;
+    }
 }
