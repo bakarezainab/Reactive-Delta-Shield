@@ -169,4 +169,11 @@ address public reactiveVmAddress;
 
         emit HedgeClosed(poolId, positionId, payoutAmount);
     }
+
+    event ReactiveVmAddressUpdated(address indexed oldAddress, address indexed newAddress);
+
+    function updateReactiveVmAddress(address _newReactiveVmAddress) external onlyOwner {
+        emit ReactiveVmAddressUpdated(reactiveVmAddress, _newReactiveVmAddress);
+        reactiveVmAddress = _newReactiveVmAddress;
+    }
 }
