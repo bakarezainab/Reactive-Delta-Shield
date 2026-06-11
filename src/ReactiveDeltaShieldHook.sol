@@ -98,17 +98,15 @@ address public reactiveVmAddress;
         BalanceDelta delta,
         bytes calldata
     ) internal override returns (bytes4, int128) {
+        if (paused) return (BaseHook.afterSwap.selector, 0);
+
         PoolId poolId = key.toId();
-        
-        // Calculate the fee portion from the swap volume
-        // In Uniswap v4, delta.amount0() and delta.amount1() represent the net pool balance changes.
-        // Positive delta means the user sent tokens to the pool (inflow).
-        // Negative delta means the pool sent tokens to the user (outflow).
         int128 amount0 = delta.amount0();
         uint256 swapAmount = amount0 > 0 ? uint256(int256(amount0)) : uint256(int256(-amount0));
         
-        // Dynamic dynamic fee allocation
-        uint256 allocatedFee = (swapAmount * hedgeFeeFraction) / 100000;
+        // Cache fee fraction to save SLOAD
+        uint24 fraction = hedgeFeeFraction;
+        uint256 allocatedFee = (swapAmount * fraction) / 100000;
         
         if (allocatedFee > 0) {
             hedgeCollateral[poolId] += allocatedFee;
