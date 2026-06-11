@@ -121,10 +121,10 @@ contract ReactiveDeltaShieldHook is BaseHook {
         address asset,
         bool isShort
     ) external onlyReactiveVM {
-        require(activeHedges[poolId] == bytes32(0), "Active hedge already exists");
+        if (activeHedges[poolId] != bytes32(0)) revert ActiveHedgeExists();
         
         uint256 marginAmount = hedgeCollateral[poolId];
-        require(marginAmount > 0, "No collateral accumulated for hedging");
+        if (marginAmount == 0) revert NoCollateralAccumulated();
 
         // Reset local accumulator for GMX deposit
         hedgeCollateral[poolId] = 0;
@@ -148,7 +148,7 @@ contract ReactiveDeltaShieldHook is BaseHook {
      */
     function closeHedge(PoolId poolId) external onlyReactiveVM {
         bytes32 positionId = activeHedges[poolId];
-        require(positionId != bytes32(0), "No active hedge to close");
+        if (positionId == bytes32(0)) revert NoActiveHedgeToClose();
 
         // Close position on Mock Perp Dex
         uint256 payoutAmount = IPerpDex(perpDex).closePosition(positionId);
