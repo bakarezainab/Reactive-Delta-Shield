@@ -137,6 +137,7 @@ contract ReactiveDeltaShieldHookTest is BaseTest {
 
         bytes32 activePositionId = hook.activeHedges(poolId);
         assertTrue(activePositionId != bytes32(0));
+        assertTrue(activePositionId != bytes32(0));
         assertEq(hook.hedgeCollateral(poolId), 0); // Margin was sent to GMX / PerpDex
 
         // Verify dex state
@@ -165,6 +166,7 @@ contract ReactiveDeltaShieldHookTest is BaseTest {
         hook.executeHedge(poolId, Currency.unwrap(currency0), true);
 
         bytes32 activePositionId = hook.activeHedges(poolId);
+        assertTrue(activePositionId != bytes32(0));
 
         // Close hedge
         vm.prank(REACTIVE_VM);
@@ -221,6 +223,24 @@ contract ReactiveDeltaShieldHookTest is BaseTest {
         hook.setPaused(true);
         assertTrue(hook.paused());
 
-        // Swap during pause shouldn't accumulate fees if we update _afterSwap to check pause status
+        // Fee accumulation should be skipped when paused
+        uint256 initialCollateral = hook.hedgeCollateral(poolId);
+        
+        swapRouter.swapExactTokensForTokens({
+            amountIn: 10e18,
+            amountOutMin: 0,
+            zeroForOne: true,
+            poolKey: poolKey,
+            hookData: Constants.ZERO_BYTES,
+            receiver: address(this),
+            deadline: block.timestamp + 1
+        });
+        
+        assertEq(hook.hedgeCollateral(poolId), initialCollateral); // No change because paused
+        
+        // executeHedge should revert when paused
+        vm.prank(REACTIVE_VM);
+        vm.expectRevert(ReactiveDeltaShieldHook.HookPaused.selector);
+        hook.executeHedge(poolId, Currency.unwrap(currency0), true);
     }
 }
