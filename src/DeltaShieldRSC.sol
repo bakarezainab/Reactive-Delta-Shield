@@ -35,8 +35,10 @@ abstract contract AbstractReactive is IReactive {
     ISystemContract public immutable service;
     bool public immutable vm;
 
+    error OnlyVM();
+
     modifier vmOnly() {
-        require(vm, "VM only");
+        if (!vm) revert OnlyVM();
         _;
     }
 
