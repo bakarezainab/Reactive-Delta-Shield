@@ -216,4 +216,11 @@ contract ReactiveDeltaShieldHookTest is BaseTest {
         vm.expectRevert(ReactiveDeltaShieldHook.InvalidLeverage.selector);
         hook.setLeverage(0);
     }
+
+    function testPauseFunctionality() public {
+        hook.setPaused(true);
+        assertTrue(hook.paused());
+
+        // Swap during pause shouldn't accumulate fees if we update _afterSwap to check pause status
+    }
 }
