@@ -183,4 +183,21 @@ contract ReactiveDeltaShieldHookTest is BaseTest {
         vm.expectRevert(ReactiveDeltaShieldHook.OnlyReactiveVM.selector);
         hook.executeHedge(poolId, Currency.unwrap(currency0), true);
     }
+
+    function testGovernanceAddressUpdates() public {
+        hook.updateReactiveVmAddress(address(0x11));
+        assertEq(hook.reactiveVmAddress(), address(0x11));
+
+        hook.updatePerpDexAddress(address(0x22));
+        assertEq(hook.perpDex(), address(0x22));
+
+        hook.updateMarginVaultAddress(address(0x33));
+        assertEq(hook.marginVault(), address(0x33));
+    }
+
+    function testGovernanceUpdatesRevertForNonOwner() public {
+        vm.prank(address(0xdead));
+        vm.expectRevert(ReactiveDeltaShieldHook.OnlyOwner.selector);
+        hook.updateReactiveVmAddress(address(0x11));
+    }
 }
