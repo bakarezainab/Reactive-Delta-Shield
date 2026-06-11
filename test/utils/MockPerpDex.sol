@@ -4,6 +4,9 @@ pragma solidity ^0.8.26;
 import {IPerpDex} from "../../src/ReactiveDeltaShieldHook.sol";
 
 contract MockPerpDex is IPerpDex {
+    event PositionOpened(bytes32 indexed positionId, address indexed asset, bool isShort, uint256 marginAmount, uint256 leverage);
+    event PositionClosed(bytes32 indexed positionId, uint256 payoutAmount);
+
     struct Position {
         address asset;
         bool isShort;
@@ -29,6 +32,7 @@ contract MockPerpDex is IPerpDex {
             leverage: leverage,
             active: true
         });
+        emit PositionOpened(positionId, asset, isShort, marginAmount, leverage);
     }
 
     function closePosition(bytes32 positionId) external override returns (uint256 payoutAmount) {
@@ -38,5 +42,6 @@ contract MockPerpDex is IPerpDex {
         
         // Return 110% of margin (simulating a profitable hedge)
         payoutAmount = (pos.marginAmount * 110) / 100;
+        emit PositionClosed(positionId, payoutAmount);
     }
 }
