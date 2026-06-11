@@ -183,4 +183,11 @@ address public reactiveVmAddress;
         emit PerpDexAddressUpdated(perpDex, _newPerpDex);
         perpDex = _newPerpDex;
     }
+
+    event MarginVaultAddressUpdated(address indexed oldAddress, address indexed newAddress);
+
+    function updateMarginVaultAddress(address _newMarginVault) external onlyOwner {
+        emit MarginVaultAddressUpdated(marginVault, _newMarginVault);
+        marginVault = _newMarginVault;
+    }
 }
