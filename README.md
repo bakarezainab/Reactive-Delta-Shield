@@ -1,183 +1,101 @@
-# Uniswap v4 Hook Template
+# Reactive Delta-Shield (RDS)
+**Autonomous, Self-Funding LP Delta-Hedging Engine for Uniswap v4**
 
-**A template for writing Uniswap v4 Hooks 🦄**
+Reactive Delta-Shield is a Uniswap v4 hook that integrates the **Reactive Network** to offer automated, zero-maintenance, and self-funding downside protection for concentrated liquidity providers (LPs). 
 
-### Get Started
+This project was built to address **Impermanent Loss (IL)** and **Loss-Versus-Rebalancing (LVR)** natively within Uniswap v4 pools.
 
-This template provides a starting point for writing Uniswap v4 Hooks, including a simple example and preconfigured test environment. Start by creating a new repository using the "Use this template" button at the top right of this page. Alternatively you can also click this link:
+---
 
-[![Use this Template](https://img.shields.io/badge/Use%20this%20Template-101010?style=for-the-badge&logo=github)](https://github.com/uniswapfoundation/v4-template/generate)
+## Key Features
 
-1. The example hook [Counter.sol](src/Counter.sol) demonstrates the `beforeSwap()` and `afterSwap()` hooks
-2. The test template [Counter.t.sol](test/Counter.t.sol) preconfigures the v4 pool manager, test tokens, and test liquidity.
+1. **Self-Funding Premium**: Instead of LPs manually managing collateral and funding rate payments for hedges, the hook dynamically isolates a fraction of pool swap fees (e.g., 10%) into a **Collateral Vault** to fund a short perp position.
+2. **Autonomous Reactive Triggers**: By running on the **Reactive Network**, a **Reactive Smart Contract (RSC)** monitors the pool's price fluctuations in real-time. If price movement exceeds a predefined safety threshold (Delta drift), the RSC automatically calls the Hook to open a hedge.
+3. **Multi-Protocol Integration**: The hook executes leveraged short/long positions on a derivatives exchange (e.g., GMX or Synthetix) to offset the LP's delta exposure.
 
-<details>
-<summary>Updating to v4-template:latest</summary>
+---
 
-This template is actively maintained -- you can update the v4 dependencies, scripts, and helpers:
+## File Structure
 
+```text
+├── src/
+│   ├── ReactiveDeltaShieldHook.sol   # Uniswap v4 Hook (handles fee allocation & GMX integration)
+│   └── DeltaShieldRSC.sol             # Reactive Smart Contract (monitors volatility & executes callbacks)
+├── test/
+│   ├── ReactiveDeltaShieldHook.t.sol # Unit tests simulating swaps, volatility, and callbacks
+│   └── utils/
+│       ├── MockPerpDex.sol           # Mock Perpetual Exchange for testing margin and positions
+│       └── BaseTest.sol              # Uniswap v4 testing utilities (cloned from template)
+└── foundry.toml
+```
+
+---
+
+## Architecture Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Swapper as Retail Trader
+    participant Pool as Uniswap v4 Pool
+    participant Hook as Delta-Shield Hook
+    participant RSC as Reactive Network RSC
+    participant GMX as GMX v2 (Derivatives)
+
+    Swapper->>Pool: Executes Large Swap (Pushes price out of range)
+    Pool->>Hook: afterSwap() lifecycle hook
+    Hook->>Hook: Allocates dynamic fee % to Collateral Vault
+    Pool-->>RSC: Emits Swap Event Logs (Price/Tick change)
+
+    Note over RSC: RSC calculates price deviation (Delta drift)
+    
+    alt Price Drift > Threshold (e.g., 2% deviation)
+        RSC->>Hook: callback(RVM_ID, payload) [Secure Callback]
+        Hook->>GMX: Open/Increase Leveraged Short (Funded by Collateral Vault)
+        GMX-->>Hook: Return Position NFT/Receipt
+    end
+
+    Note over RSC: Price returns to baseline or LP range changes
+    RSC->>Hook: callback(RVM_ID, close_payload)
+    Hook->>GMX: Close Short Position & Reclaim Margin + Profits
+    Hook->>Hook: Re-invest profits back into the liquidity pool
+```
+
+---
+
+## Getting Started
+
+### 1. Requirements
+Ensure you have Foundry installed on your machine. If not, install it via:
 ```bash
-git remote add template https://github.com/uniswapfoundation/v4-template
-git fetch template
-git merge template/main <BRANCH> --allow-unrelated-histories
-```
-
-</details>
-
-### Requirements
-
-This template is designed to work with Foundry (stable). If you are using Foundry Nightly, you may encounter compatibility issues. You can update your Foundry installation to the latest stable version by running:
-
-```
+curl -L https://foundry.paradigm.xyz | bash
 foundryup
 ```
 
-To set up the project, run the following commands in your terminal to install dependencies and run the tests:
-
-```
+### 2. Setup
+Install project submodules and Uniswap v4 core files:
+```bash
 forge install
+```
+
+### 3. Run Tests
+Verify the hook logic and mock execution works:
+```bash
 forge test
 ```
 
-### Local Development
+---
 
-Other than writing unit tests (recommended!), you can only deploy & test hooks on [anvil](https://book.getfoundry.sh/anvil/) locally. Scripts are available in the `script/` directory, which can be used to deploy hooks, create pools, provide liquidity and swap tokens. The scripts support both local `anvil` environment as well as running them directly on a production network.
+## Deployment & Production Workflow
 
-### Executing locally with using **Anvil**:
+### Step 1: Deploy Uniswap v4 Hook
+Deploy `ReactiveDeltaShieldHook.sol` to your chosen EVM-compatible chain (e.g., Arbitrum, Base, or Unichain). Note the deployed address.
 
-1. Start Anvil (or fork a specific chain using anvil):
+### Step 2: Deploy Reactive Contract (RSC)
+Deploy `DeltaShieldRSC.sol` to the **Reactive Network Testnet / Kopru** using the Reactive Network developer tools. Provide:
+* Source Chain ID
+* Target Chain ID (where Uniswap v4 pool resides)
+* Target Uniswap v4 Pool Address
+* Target Hook Address
 
-```bash
-anvil
-```
-
-or
-
-```bash
-anvil --fork-url <YOUR_RPC_URL>
-```
-
-2. Execute scripts:
-
-```bash
-forge script script/00_DeployHook.s.sol \
-    --rpc-url http://localhost:8545 \
-    --private-key <PRIVATE_KEY> \
-    --broadcast
-```
-
-### Using **RPC URLs** (actual transactions):
-
-:::info
-It is best to not store your private key even in .env or enter it directly in the command line. Instead use the `--account` flag to select your private key from your keystore.
-:::
-
-### Follow these steps if you have not stored your private key in the keystore:
-
-<details>
-
-1. Add your private key to the keystore:
-
-```bash
-cast wallet import <SET_A_NAME_FOR_KEY> --interactive
-```
-
-2. You will prompted to enter your private key and set a password, fill and press enter:
-
-```
-Enter private key: <YOUR_PRIVATE_KEY>
-Enter keystore password: <SET_NEW_PASSWORD>
-```
-
-You should see this:
-
-```
-`<YOUR_WALLET_PRIVATE_KEY_NAME>` keystore was saved successfully. Address: <YOUR_WALLET_ADDRESS>
-```
-
-::: warning
-Use `history -c` to clear your command history.
-:::
-
-</details>
-
-1. Execute scripts:
-
-```bash
-forge script script/00_DeployHook.s.sol \
-    --rpc-url <YOUR_RPC_URL> \
-    --account <YOUR_WALLET_PRIVATE_KEY_NAME> \
-    --sender <YOUR_WALLET_ADDRESS> \
-    --broadcast
-```
-
-You will prompted to enter your wallet password, fill and press enter:
-
-```
-Enter keystore password: <YOUR_PASSWORD>
-```
-
-### Key Modifications to note:
-
-1. Update the `token0` and `token1` addresses in the `BaseScript.sol` file to match the tokens you want to use in the network of your choice for sepolia and mainnet deployments.
-2. Update the `token0Amount` and `token1Amount` in the `CreatePoolAndAddLiquidity.s.sol` file to match the amount of tokens you want to provide liquidity with.
-3. Update the `token0Amount` and `token1Amount` in the `AddLiquidity.s.sol` file to match the amount of tokens you want to provide liquidity with.
-4. Update the `amountIn` and `amountOutMin` in the `Swap.s.sol` file to match the amount of tokens you want to swap.
-
-### Verifying the hook contract
-
-```bash
-forge verify-contract \
-  --rpc-url <URL> \
-  --chain <CHAIN_NAME_OR_ID> \
-  # Generally etherscan
-  --verifier <Verification_Provider> \
-  # Use --etherscan-api-key <ETHERSCAN_API_KEY> if you are using etherscan
-  --verifier-api-key <Verification_Provider_API_KEY> \
-  --constructor-args <ABI_ENCODED_ARGS> \
-  --num-of-optimizations <OPTIMIZER_RUNS> \
-  <Contract_Address> \
-  <path/to/Contract.sol:ContractName>
-  --watch
-```
-
-### Troubleshooting
-
-<details>
-
-#### Permission Denied
-
-When installing dependencies with `forge install`, Github may throw a `Permission Denied` error
-
-Typically caused by missing Github SSH keys, and can be resolved by following the steps [here](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh)
-
-Or [adding the keys to your ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#adding-your-ssh-key-to-the-ssh-agent), if you have already uploaded SSH keys
-
-#### Anvil fork test failures
-
-Some versions of Foundry may limit contract code size to ~25kb, which could prevent local tests to fail. You can resolve this by setting the `code-size-limit` flag
-
-```
-anvil --code-size-limit 40000
-```
-
-#### Hook deployment failures
-
-Hook deployment failures are caused by incorrect flags or incorrect salt mining
-
-1. Verify the flags are in agreement:
-   - `getHookCalls()` returns the correct flags
-   - `flags` provided to `HookMiner.find(...)`
-2. Verify salt mining is correct:
-   - In **forge test**: the _deployer_ for: `new Hook{salt: salt}(...)` and `HookMiner.find(deployer, ...)` are the same. This will be `address(this)`. If using `vm.prank`, the deployer will be the pranking address
-   - In **forge script**: the deployer must be the CREATE2 Proxy: `0x4e59b44847b379578588920cA78FbF26c0B4956C`
-     - If anvil does not have the CREATE2 deployer, your foundry may be out of date. You can update it with `foundryup`
-
-</details>
-
-### Additional Resources
-
-- [Uniswap v4 docs](https://docs.uniswap.org/contracts/v4/overview)
-- [v4-periphery](https://github.com/uniswap/v4-periphery)
-- [v4-core](https://github.com/uniswap/v4-core)
-- [v4-by-example](https://v4-by-example.org)
+Once deployed, the RSC will automatically subscribe to the Swap logs and orchestrate autonomous hedging transactions.
