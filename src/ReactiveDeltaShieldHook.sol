@@ -22,6 +22,15 @@ interface IPerpDex {
 }
 
 contract ReactiveDeltaShieldHook is BaseHook {
+    error OnlyReactiveVM();
+    error ActiveHedgeExists();
+    error NoCollateralAccumulated();
+    error NoActiveHedgeToClose();
+    error OnlyOwner();
+    error HookPaused();
+    error InvalidFeeFraction();
+    error InvalidLeverage();
+
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
