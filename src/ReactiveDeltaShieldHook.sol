@@ -49,7 +49,7 @@ contract ReactiveDeltaShieldHook is BaseHook {
     event FeeAccumulated(PoolId indexed poolId, uint256 amount);
 
     modifier onlyReactiveVM() {
-        require(msg.sender == reactiveVmAddress, "Only Reactive VM authorized");
+        if (msg.sender != reactiveVmAddress) revert OnlyReactiveVM();
         _;
     }
 

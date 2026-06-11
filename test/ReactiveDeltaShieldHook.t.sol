@@ -180,7 +180,7 @@ contract ReactiveDeltaShieldHookTest is BaseTest {
 
     function testRevertHedgeUnauthorized() public {
         // Attempt to execute hedge from unauthorized user
-        vm.expectRevert("Only Reactive VM authorized");
+        vm.expectRevert(ReactiveDeltaShieldHook.OnlyReactiveVM.selector);
         hook.executeHedge(poolId, Currency.unwrap(currency0), true);
     }
 }
