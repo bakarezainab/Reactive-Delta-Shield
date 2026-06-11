@@ -34,7 +34,14 @@ contract ReactiveDeltaShieldHook is BaseHook {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
-    address public reactiveVmAddress;
+    
+    address public owner;
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert OnlyOwner();
+        _;
+    }
+address public reactiveVmAddress;
     address public perpDex;
     address public marginVault;
 
@@ -59,6 +66,7 @@ contract ReactiveDeltaShieldHook is BaseHook {
         address _perpDex,
         address _marginVault
     ) BaseHook(_poolManager) {
+        owner = msg.sender;
         reactiveVmAddress = _reactiveVmAddress;
         perpDex = _perpDex;
         marginVault = _marginVault;
