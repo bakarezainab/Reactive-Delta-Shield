@@ -200,4 +200,20 @@ contract ReactiveDeltaShieldHookTest is BaseTest {
         vm.expectRevert(ReactiveDeltaShieldHook.OnlyOwner.selector);
         hook.updateReactiveVmAddress(address(0x11));
     }
+
+    function testGovernanceParamUpdates() public {
+        hook.setHedgeFeeFraction(5000); // 5%
+        assertEq(hook.hedgeFeeFraction(), 5000);
+
+        hook.setLeverage(10);
+        assertEq(hook.leverage(), 10);
+    }
+
+    function testGovernanceParamReverts() public {
+        vm.expectRevert(ReactiveDeltaShieldHook.InvalidFeeFraction.selector);
+        hook.setHedgeFeeFraction(100001); // Exceeds 100%
+
+        vm.expectRevert(ReactiveDeltaShieldHook.InvalidLeverage.selector);
+        hook.setLeverage(0);
+    }
 }
