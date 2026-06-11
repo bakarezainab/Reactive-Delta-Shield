@@ -34,12 +34,12 @@ contract ReactiveDeltaShieldHook is BaseHook {
     using PoolIdLibrary for PoolKey;
     using CurrencyLibrary for Currency;
 
-    address public immutable reactiveVmAddress;
-    address public immutable perpDex;
-    address public immutable marginVault;
+    address public reactiveVmAddress;
+    address public perpDex;
+    address public marginVault;
 
-    uint24 public constant HEDGE_FEE_FRACTION = 1000; // 10% of swap fees (in basis points)
-    uint256 public constant LEVERAGE = 5; // 5x leverage on GMX/PerpDex
+    uint24 public hedgeFeeFraction = 1000; // 10% of swap fees (in basis points)
+    uint256 public leverage = 5; // 5x leverage on GMX/PerpDex
 
     mapping(PoolId => bytes32) public activeHedges;
     mapping(PoolId => uint256) public hedgeCollateral;
@@ -100,7 +100,7 @@ contract ReactiveDeltaShieldHook is BaseHook {
         uint256 swapAmount = amount0 > 0 ? uint256(int256(amount0)) : uint256(int256(-amount0));
         
         // Dynamic dynamic fee allocation
-        uint256 allocatedFee = (swapAmount * HEDGE_FEE_FRACTION) / 100000;
+        uint256 allocatedFee = (swapAmount * hedgeFeeFraction) / 100000;
         
         if (allocatedFee > 0) {
             hedgeCollateral[poolId] += allocatedFee;
@@ -134,7 +134,7 @@ contract ReactiveDeltaShieldHook is BaseHook {
             asset,
             isShort,
             marginAmount,
-            LEVERAGE
+            leverage
         );
 
         activeHedges[poolId] = positionId;
